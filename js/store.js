@@ -29,6 +29,20 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 
 export const getState = () => state;
 
+// ---------- Goals ----------
+// Placeholders until changed in Settings; the same goal applies every day.
+export const DEFAULT_GOALS = { calGoal: 2600, proteinGoal: 180 };
+
+export function getGoals() {
+  const s = state.settings || {};
+  return { calGoal: s.calGoal ?? DEFAULT_GOALS.calGoal, proteinGoal: s.proteinGoal ?? DEFAULT_GOALS.proteinGoal };
+}
+
+export function saveGoals({ calGoal, proteinGoal }) {
+  state.settings = { ...state.settings, calGoal, proteinGoal };
+  save();
+}
+
 // ---------- Saved foods ----------
 export function getFood(id) {
   return state.foods.find(f => f.id === id);

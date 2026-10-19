@@ -78,3 +78,21 @@ test('searchFoods is case-insensitive and sorted', () => {
   assert.deepEqual(searchFoods(foods, 'CHICK').map(f => f.name), ['chicken breast', 'Chicken thigh']);
   assert.equal(searchFoods(foods, '  ').length, 3);
 });
+
+test('progress: under, exactly at, and over the goal', async () => {
+  const { progress } = await import('../js/logic.js');
+  assert.deepEqual(progress(1840, 2600), { eaten: 1840, goal: 2600, remaining: 760, over: false, pct: 1840 / 2600 });
+  const at = progress(2600, 2600);
+  assert.equal(at.remaining, 0); assert.equal(at.over, false); assert.equal(at.pct, 1);
+  const over = progress(2840, 2600);
+  assert.equal(over.remaining, -240); assert.equal(over.over, true); assert.equal(over.pct, 1);
+  assert.equal(progress(10, 0).pct, 0);
+});
+
+test('formatSigned uses a minus sign and commas', async () => {
+  const { formatSigned } = await import('../js/logic.js');
+  assert.equal(formatSigned(760), '760');
+  assert.equal(formatSigned(0), '0');
+  assert.equal(formatSigned(-240), '−240');
+  assert.equal(formatSigned(-1240), '−1,240');
+});

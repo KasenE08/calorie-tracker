@@ -93,10 +93,7 @@ function renderToday() {
 
   return `<main class="screen with-tabs">
     <div class="top"><div><div class="date">${dateLine}</div><div class="title">${dayTitle(ui.date)}</div></div></div>
-    <section class="summary">
-      <div><b class="c num">${fmt(day.cal)}</b><span class="c">Calories</span></div>
-      <div><b class="p num">${fmt(day.protein)} g</b><span class="p">Protein</span></div>
-    </section>
+    ${hero(day)}
     <div class="tabs">${tabs}</div>
     <div class="list">
       ${rows}
@@ -107,6 +104,30 @@ function renderToday() {
       </div>
     </div>
   </main>`;
+}
+
+// Big calories-remaining number + calorie (blue) and protein (orange) bars.
+// Calories turn red only once eaten is over the goal.
+function hero(day) {
+  const goals = S.getGoals();
+  const cal = L.progress(day.cal, goals.calGoal);
+  const pro = L.progress(day.protein, goals.proteinGoal);
+  const big = L.formatSigned(cal.remaining);
+  const size = big.length > 6 ? ' xs' : big.length > 4 ? ' sm' : '';
+  return `<section class="hero${cal.over ? ' over' : ''}">
+    <div>
+      <div class="big num${size}" data-testid="remaining">${big}</div>
+      <div class="cap">cal remaining</div>
+    </div>
+    <div class="bars">
+      <div class="bar cal"><div class="lbl">Calories</div>
+        <div class="val num" data-testid="cal-val">${fmt(cal.eaten)} <small>/ ${fmt(cal.goal)} cal</small></div>
+        <div class="track"><div class="fill" style="width:${(cal.pct * 100).toFixed(1)}%"></div></div></div>
+      <div class="bar pro"><div class="lbl">Protein</div>
+        <div class="val num" data-testid="pro-val">${fmt(pro.eaten)} <small>/ ${fmt(pro.goal)} g</small></div>
+        <div class="track"><div class="fill" style="width:${(pro.pct * 100).toFixed(1)}%"></div></div></div>
+    </div>
+  </section>`;
 }
 
 const searchBox = (id, value = '') => `<div class="search">
@@ -143,8 +164,21 @@ function renderMeals() {
 }
 
 function renderSettings() {
+  const g = S.getGoals();
   return `<main class="screen with-tabs"><div class="pagetitle">Settings</div>
-    <div class="placeholder">Daily goals are coming in Phase 2.<br>Export / Import backup in Phase 4.</div></main>`;
+    <div class="section-h">Daily goals</div>
+    <div class="form">
+      <div class="row2">
+        <div class="field"><label for="g-cal" class="c">Calories</label><div class="unit"><input id="g-cal" inputmode="numeric" pattern="[0-9]*" value="${g.calGoal}"><span>cal</span></div></div>
+        <div class="field"><label for="g-pro" class="p">Protein</label><div class="unit"><input id="g-pro" inputmode="numeric" pattern="[0-9]*" value="${g.proteinGoal}"><span>g</span></div></div>
+      </div>
+      <div class="err" id="g-err"></div>
+    </div>
+    <div class="actions"><button class="btn primary big" data-act="save-goals">Save goals</button></div>
+    <p class="note">The same goals apply to every day.</p>
+    <div class="section-h">Backup</div>
+    <p class="note left">Export / Import is coming in Phase 4.</p>
+  </main>`;
 }
 
 function nav(title, back = 'Back') {
@@ -345,6 +379,17 @@ $app.addEventListener('click', ev => {
       if (!(protein >= 0)) { err.textContent = 'Enter protein per serving (0 is fine).'; break; }
       const food = S.saveFood({ id: p.foodId, name, servingGrams, cal, protein });
       if (p.thenLog) { ui.stack.pop(); openLogNew(food); } else { toast(p.foodId ? 'Food saved' : 'Food created'); pop(); }
+      break;
+    }
+    case 'save-goals': {
+      const calGoal = num('g-cal');
+      const proteinGoal = num('g-pro');
+      const err = document.getElementById('g-err');
+      if (!(calGoal > 0)) { err.textContent = 'Enter a calorie goal above 0.'; break; }
+      if (!(proteinGoal > 0)) { err.textContent = 'Enter a protein goal above 0.'; break; }
+      S.saveGoals({ calGoal: Math.round(calGoal), proteinGoal: Math.round(proteinGoal) });
+      err.textContent = '';
+      toast('Goals saved');
       break;
     }
     case 'delete-food':

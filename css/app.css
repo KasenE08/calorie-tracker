@@ -27,10 +27,24 @@ input { font: inherit; color: var(--ink); }
 .top .date { font-size: 15px; color: var(--muted); font-weight: 600; }
 .top .title { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
 
-/* Day summary (Phase 1; becomes the big-number card in Phase 2) */
-.summary { margin: 12px 16px 0; border: 1.5px solid var(--line); border-radius: 22px; padding: 16px 18px; display: flex; justify-content: space-around; text-align: center; }
-.summary b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -1px; }
-.summary span { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+/* Hero: big calories-remaining number + bars */
+.hero { margin: 12px 16px 0; border: 1.5px solid var(--line); border-radius: 22px; padding: 18px; display: grid; grid-template-columns: 1fr 1.25fr; gap: 16px; align-items: center; }
+.hero .big { font-size: 56px; font-weight: 800; letter-spacing: -2px; line-height: 1; color: var(--blue); white-space: nowrap; }
+.hero .big.sm { font-size: 46px; letter-spacing: -1.5px; }
+.hero .big.xs { font-size: 38px; letter-spacing: -1px; }
+.hero .cap { font-size: 13px; color: var(--muted); font-weight: 600; margin-top: 6px; }
+.hero.over .big, .hero.over .cap { color: var(--red); }
+.bars { display: grid; gap: 14px; }
+.bar .lbl { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.bar.cal .lbl { color: var(--blue); } .bar.pro .lbl { color: var(--orange); }
+.bar .val { font-size: 15px; font-weight: 700; margin-bottom: 6px; white-space: nowrap; }
+.bar .val small { color: var(--muted); font-weight: 500; font-size: 13px; }
+.track { height: 8px; border-radius: 4px; overflow: hidden; }
+.fill { height: 100%; border-radius: 4px; transition: width .3s; }
+.bar.cal .track { background: var(--blue-soft); } .bar.cal .fill { background: var(--blue); }
+.bar.pro .track { background: var(--orange-soft); } .bar.pro .fill { background: var(--orange); }
+.hero.over .bar.cal .lbl, .hero.over .bar.cal .val { color: var(--red); }
+.hero.over .bar.cal .track { background: #fde6e5; } .hero.over .bar.cal .fill { background: var(--red); }
 
 /* Meal tabs */
 .tabs { display: grid; grid-template-columns: repeat(4, 1fr); margin: 18px 16px 0; border-bottom: 1.5px solid var(--line); }
@@ -125,3 +139,5 @@ input { font: inherit; color: var(--ink); }
   background: var(--ink); color: #fff; font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 20px; }
 .field label.c { color: var(--blue); }
 .field label.p { color: var(--orange); }
+.section-h { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); padding: 18px 20px 8px; }
+.note.left { text-align: left; margin: 0 20px; font-size: 14px; }

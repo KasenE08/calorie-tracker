@@ -75,3 +75,16 @@ export function searchFoods(foods, query) {
   const list = q ? foods.filter(f => f.name.toLowerCase().includes(q)) : foods.slice();
   return list.sort((a, b) => a.name.localeCompare(b.name));
 }
+
+// Goal progress for one number (calories or protein).
+// Over only when eaten is strictly more than the goal.
+export function progress(eaten, goal) {
+  const remaining = goal - eaten;
+  return { eaten, goal, remaining, over: remaining < 0, pct: goal > 0 ? Math.min(eaten / goal, 1) : 0 };
+}
+
+// "1,234" or "−240" (true minus sign) for the big remaining number.
+export function formatSigned(n) {
+  const s = Math.abs(Math.round(n)).toLocaleString('en-US');
+  return n < 0 ? `−${s}` : s;
+}

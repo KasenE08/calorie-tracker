@@ -141,8 +141,8 @@ await tap('[data-meal="dinner"]');
 await shot('09 Today - Dinner tab');
 await tap('[data-meal="lunch"]');
 await shot('10 Today - Lunch tab');
-assert.equal(await text('.summary .c.num'), '1,606');
-assert.equal(await text('.summary .p.num'), '134 g');
+assert.equal(await text('[data-testid="cal-val"]'), '1,606 / 2,600 cal');
+assert.equal(await text('[data-testid="pro-val"]'), '134 / 180 g');
 
 // ---- Edit an entry: change amount + move meal ----
 await page.click('.entry:has-text("Chicken breast")');
@@ -200,7 +200,7 @@ await page.clock.setFixedTime(T('2026-10-16T04:01:00'));
 await page.reload();
 assert.equal(await text('.top .date'), 'Friday, Oct 16');
 assert.equal(await text('.tab.on .t'), 'Breakfast');
-assert.equal(await text('.summary .c.num'), '0');
+assert.equal(await text('[data-testid="remaining"]'), '2,600');
 await shot('14 4-01 AM - new day');
 
 await browser.close();

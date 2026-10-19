@@ -119,3 +119,7 @@ FIRST ACTION: save this entire file as SPEC.md in the repo root. Re-read it at t
 - **Time precision:** go by the minute, ignore seconds (e.g. 11:00:45 = 11:00).
 - **Protein:** whole grams everywhere (round to nearest gram). Calories are whole numbers too.
 - **Git:** Claude pushes to `main` automatically at the end of each phase (and whenever useful), no need to ask. Git permissions are pre-approved in `.claude/settings.json`.
+
+### After Phase 1 (2026-10-19)
+- **First launch:** start with placeholder goals **2,600 cal / 180 g**, changeable in Settings (no setup prompt).
+- **Colors:** calories stay **blue** until actually over the goal (remaining < 0), then the number and calorie bar turn **red**. No "near goal" warning color. Exactly at goal (0 remaining) is still blue.
