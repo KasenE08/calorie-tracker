@@ -96,3 +96,22 @@ test('formatSigned uses a minus sign and commas', async () => {
   assert.equal(formatSigned(-240), '−240');
   assert.equal(formatSigned(-1240), '−1,240');
 });
+
+test('weekStartOf finds Monday; weekDates gives Mon–Sun', async () => {
+  const { weekStartOf, weekDates } = await import('../js/logic.js');
+  assert.equal(weekStartOf('2026-10-15'), '2026-10-12'); // Thu → Mon
+  assert.equal(weekStartOf('2026-10-12'), '2026-10-12'); // Mon
+  assert.equal(weekStartOf('2026-10-18'), '2026-10-12'); // Sun
+  assert.equal(weekStartOf('2027-01-01'), '2026-12-28'); // across years
+  assert.deepEqual(weekDates('2026-10-26'), ['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01']);
+});
+
+test('entryFieldsFromItem copies values (not references) and rescales', async () => {
+  const { entryFieldsFromItem } = await import('../js/logic.js');
+  const item = { kind: 'food', foodId: 'f1', name: 'Chicken', unit: 'grams', amount: 220, snapshot: { servingGrams: 100, cal: 165, protein: 31 } };
+  const e = entryFieldsFromItem(item);
+  assert.equal(e.cal, 363); assert.equal(e.protein, 68);
+  e.snapshot.cal = 1;
+  assert.equal(item.snapshot.cal, 165);
+  assert.deepEqual(entryFieldsFromItem({ kind: 'quick', name: 'Coffee', cal: 60, protein: 3 }), { kind: 'quick', name: 'Coffee', cal: 60, protein: 3 });
+});

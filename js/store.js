@@ -1,5 +1,5 @@
 // Device storage (localStorage). One JSON blob, versioned for future migrations.
-import { scale } from './logic.js';
+import { scale, entryFieldsFromItem } from './logic.js';
 
 const KEY = 'calorie-tracker.v1';
 
@@ -105,4 +105,40 @@ export function deleteEntry(id) {
 
 export function entriesFor(date) {
   return state.entries.filter(e => e.date === date);
+}
+
+// Add several entries at once (saved meal or Repeat). Each becomes a normal,
+// editable entry with its own copy of the values.
+export function addEntries(items, { date, meal }) {
+  const loggedAt = new Date().toISOString();
+  for (const item of items) state.entries.push({ id: uid(), ...entryFieldsFromItem(item), date, meal, loggedAt });
+  save();
+}
+
+// ---------- Saved meals ----------
+// { id, name, category, items: [{ kind:'food', foodId, name, unit, amount, snapshot } | { kind:'quick', name, cal, protein }] }
+export function getMeal(id) {
+  return state.savedMeals.find(m => m.id === id);
+}
+
+export function saveMeal({ id, name, category, items }) {
+  const meal = { id: id || uid(), name: name.trim(), category, items: structuredClone(items) };
+  const i = state.savedMeals.findIndex(m => m.id === meal.id);
+  if (i >= 0) state.savedMeals[i] = meal; else state.savedMeals.push(meal);
+  save();
+  return meal;
+}
+
+export function deleteMeal(id) {
+  state.savedMeals = state.savedMeals.filter(m => m.id !== id);
+  save();
+}
+
+// Items of a saved meal, using the latest values of any saved food that still exists.
+export function mealItemsForAdding(meal) {
+  return meal.items.map(it => {
+    const food = it.kind === 'food' && getFood(it.foodId);
+    if (!food) return it;
+    return { ...it, name: food.name, snapshot: { servingGrams: food.servingGrams, cal: food.cal, protein: food.protein } };
+  });
 }

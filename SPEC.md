@@ -123,3 +123,8 @@ FIRST ACTION: save this entire file as SPEC.md in the repo root. Re-read it at t
 ### After Phase 1 (2026-10-19)
 - **First launch:** start with placeholder goals **2,600 cal / 180 g**, changeable in Settings (no setup prompt).
 - **Colors:** calories stay **blue** until actually over the goal (remaining < 0), then the number and calorie bar turn **red**. No "near goal" warning color. Exactly at goal (0 remaining) is still blue.
+
+### After Phase 2 (2026-10-19)
+- **Creating saved meals:** both ways — "Save as meal" from a day's meal tab, AND build one from scratch in the Meals tab. Saved meals are listed under their category (Breakfast/Lunch/Dinner/Late Night).
+- **Adding a saved meal / Repeat:** entries go into the meal for the **current clock time when you add them** (same rule as all logging), not the category the meal was saved under. Everything stays editable afterward.
+- **Week strip:** keep the small progress ring around each day (blue; red on days over the calorie goal).

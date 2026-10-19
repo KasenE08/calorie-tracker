@@ -88,3 +88,21 @@ export function formatSigned(n) {
   const s = Math.abs(Math.round(n)).toLocaleString('en-US');
   return n < 0 ? `−${s}` : s;
 }
+
+// Monday of the week containing this date.
+export function weekStartOf(iso) {
+  const d = fromISODate(iso);
+  const back = (d.getDay() + 6) % 7; // Mon=0 … Sun=6
+  return addDays(iso, -back);
+}
+
+export const weekDates = start => Array.from({ length: 7 }, (_, i) => addDays(start, i));
+
+// New entry fields from a saved-meal item or a logged entry (for Repeat).
+export function entryFieldsFromItem(item) {
+  if (item.kind === 'food') {
+    return { kind: 'food', foodId: item.foodId, name: item.name, unit: item.unit, amount: item.amount,
+      snapshot: { ...item.snapshot }, ...scale(item.snapshot, item.unit, item.amount) };
+  }
+  return { kind: 'quick', name: item.name, cal: item.cal, protein: item.protein };
+}
