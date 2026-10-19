@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<title>Layout B — Dashboard + Tabs</title>
+<style>
+  :root {
+    --blue: #1a6cf0; --blue-soft: #e8f0fe;
+    --orange: #ff8a00; --orange-soft: #fff1e0;
+    --red: #e0322b; --ink: #000; --muted: #6b6b70; --line: #e6e6eb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #fff; color: var(--ink); }
+  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+         width: 390px; height: 844px; position: relative; overflow: hidden; }
+  .status { height: 47px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 28px 6px; font-weight: 600; font-size: 15px; }
+
+  .top { display: flex; justify-content: space-between; align-items: center; padding: 8px 20px 4px; }
+  .top .date { font-size: 15px; color: var(--muted); font-weight: 600; }
+  .top .title { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .today-pill { font-size: 13px; font-weight: 700; color: var(--blue); border: 1.5px solid var(--blue); border-radius: 20px; padding: 5px 12px; }
+
+  /* week strip with mini progress rings */
+  .week { display: flex; align-items: center; padding: 10px 6px 6px; }
+  .week .arrow { width: 18px; color: #c7c7cc; font-size: 18px; text-align: center; }
+  .week .days { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); }
+  .d { text-align: center; }
+  .d .dow { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .3px; }
+  .ring { width: 40px; height: 40px; margin: 6px auto 0; position: relative; }
+  .ring svg { position: absolute; inset: 0; }
+  .ring .n { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; font-weight: 700; }
+  .d.sel .ring .n { color: #fff; }
+  .d.sel .ring .bg { fill: var(--blue); }
+
+  /* hero: number left, bars right */
+  .hero { margin: 10px 16px 0; border: 1.5px solid var(--line); border-radius: 22px; padding: 18px; display: grid; grid-template-columns: 1fr 1.25fr; gap: 16px; align-items: center; }
+  .big { font-size: 58px; font-weight: 800; letter-spacing: -2px; line-height: 1; color: var(--blue); font-variant-numeric: tabular-nums; }
+  .big.over { color: var(--red); }
+  .cap { font-size: 13px; color: var(--muted); font-weight: 600; margin-top: 6px; }
+  .bars { display: grid; gap: 14px; }
+  .bar .lbl { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  .bar.cal .lbl { color: var(--blue); } .bar.pro .lbl { color: var(--orange); }
+  .bar .val { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 6px; }
+  .bar .val small { color: var(--muted); font-weight: 500; font-size: 13px; }
+  .track { height: 8px; border-radius: 4px; overflow: hidden; }
+  .bar.cal .track { background: var(--blue-soft); } .bar.cal .fill { background: var(--blue); }
+  .bar.pro .track { background: var(--orange-soft); } .bar.pro .fill { background: var(--orange); }
+  .fill { height: 100%; border-radius: 4px; }
+
+  /* meal tabs */
+  .tabs { display: grid; grid-template-columns: repeat(4, 1fr); margin: 18px 16px 0; border-bottom: 1.5px solid var(--line); }
+  .tab { text-align: center; padding: 8px 0 10px; position: relative; }
+  .tab .t { font-size: 14px; font-weight: 700; color: var(--muted); }
+  .tab .s { font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+  .tab.on .t { color: var(--ink); }
+  .tab.on .s { color: var(--blue); }
+  .tab.on::after { content: ""; position: absolute; left: 14%; right: 14%; bottom: -1.5px; height: 3px; border-radius: 2px; background: var(--ink); }
+
+  .list { padding: 4px 16px 0; }
+  .entry { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .entry .av { width: 38px; height: 38px; border-radius: 12px; background: #f3f3f6; display: grid; place-items: center; font-size: 18px; }
+  .entry .mid { flex: 1; }
+  .entry .n { font-size: 15px; font-weight: 600; }
+  .entry .q { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .entry .v { text-align: right; font-variant-numeric: tabular-nums; }
+  .entry .v .c { font-size: 15px; font-weight: 700; color: var(--blue); }
+  .entry .v .p { font-size: 12px; font-weight: 700; color: var(--orange); }
+  .subtotal { display: flex; justify-content: space-between; padding: 12px 0; font-size: 14px; font-weight: 700; }
+  .subtotal .c { color: var(--blue); } .subtotal .p { color: var(--orange); }
+  .addrow { display: flex; gap: 8px; }
+  .addrow div { flex: 1; text-align: center; padding: 11px 0; border-radius: 12px; font-size: 14px; font-weight: 700; }
+  .addrow .a { background: var(--blue); color: #fff; }
+  .addrow .b { background: #f3f3f6; color: var(--ink); }
+
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; border-top: 1px solid var(--line); background: #fff;
+            display: grid; grid-template-columns: repeat(4, 1fr); padding-top: 8px; }
+  .tb { text-align: center; font-size: 10px; font-weight: 600; color: #9a9aa0; }
+  .tb .i { font-size: 22px; height: 26px; }
+  .tb.on { color: var(--blue); }
+
+  /* Add food: full-screen page */
+  .page { display: none; position: absolute; inset: 0; background: #fff; }
+  body.sheet-open .page { display: block; }
+  .nav { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; }
+  .nav .back { color: var(--blue); font-size: 17px; font-weight: 500; }
+  .nav .ttl { font-size: 17px; font-weight: 700; }
+  .nav .sp { width: 50px; }
+  .food-card { margin: 8px 16px; border-radius: 20px; background: #f6f6f8; padding: 16px; }
+  .food-card .n { font-size: 22px; font-weight: 800; }
+  .food-card .q { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .chips { display: flex; gap: 8px; margin: 12px 16px 0; }
+  .chip { padding: 8px 14px; border-radius: 20px; font-size: 14px; font-weight: 700; background: #f3f3f6; color: var(--muted); }
+  .chip.on { background: var(--ink); color: #fff; }
+  .amt { text-align: center; margin-top: 18px; }
+  .amt .num { font-size: 64px; font-weight: 800; letter-spacing: -2px; line-height: 1; }
+  .amt .u { font-size: 16px; font-weight: 600; color: var(--muted); margin-top: 4px; }
+  .res { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 18px 16px 0; }
+  .res div { border-radius: 16px; padding: 12px; text-align: center; }
+  .res .c { background: var(--blue-soft); color: var(--blue); }
+  .res .p { background: var(--orange-soft); color: var(--orange); }
+  .res b { display: block; font-size: 24px; font-weight: 800; }
+  .res span { font-size: 12px; font-weight: 700; }
+  .mealsel { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin: 14px 16px 0; }
+  .mealsel div { text-align: center; font-size: 12px; font-weight: 700; padding: 8px 0; border-radius: 10px; border: 1.5px solid var(--line); color: var(--muted); }
+  .mealsel div.on { border-color: var(--blue); color: var(--blue); }
+  .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 16px 0; }
+  .pad div { text-align: center; padding: 12px 0; font-size: 22px; font-weight: 600; background: #f6f6f8; border-radius: 12px; }
+  .save { margin: 12px 16px 0; background: var(--blue); color: #fff; text-align: center; padding: 15px; border-radius: 14px; font-size: 17px; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+
+  <div class="top">
+    <div><div class="date">Thursday, Oct 15</div><div class="title">Today</div></div>
+    <div class="today-pill">Today</div>
+  </div>
+
+  <div class="week">
+    <div class="arrow">‹</div>
+    <div class="days" id="days"></div>
+    <div class="arrow">›</div>
+  </div>
+
+  <section class="hero">
+    <div>
+      <div class="big">760</div>
+      <div class="cap">cal remaining</div>
+    </div>
+    <div class="bars">
+      <div class="bar cal"><div class="lbl">Calories</div><div class="val">1,840 <small>/ 2,600 cal</small></div><div class="track"><div class="fill" style="width:70.8%"></div></div></div>
+      <div class="bar pro"><div class="lbl">Protein</div><div class="val">142 <small>/ 180 g</small></div><div class="track"><div class="fill" style="width:78.9%"></div></div></div>
+    </div>
+  </section>
+
+  <div class="tabs">
+    <div class="tab"><div class="t">Breakfast</div><div class="s">315</div></div>
+    <div class="tab on"><div class="t">Lunch</div><div class="s">695</div></div>
+    <div class="tab"><div class="t">Dinner</div><div class="s">710</div></div>
+    <div class="tab"><div class="t">Late Night</div><div class="s">120</div></div>
+  </div>
+
+  <div class="list">
+    <div class="entry"><div class="av">🍗</div><div class="mid"><div class="n">Chicken breast</div><div class="q">200 g</div></div><div class="v"><div class="c">330</div><div class="p">62 g</div></div></div>
+    <div class="entry"><div class="av">🍚</div><div class="mid"><div class="n">White rice</div><div class="q">1.5 servings · 279 g</div></div><div class="v"><div class="c">310</div><div class="p">6 g</div></div></div>
+    <div class="entry"><div class="av">🥦</div><div class="mid"><div class="n">Broccoli</div><div class="q">150 g</div></div><div class="v"><div class="c">55</div><div class="p">4 g</div></div></div>
+    <div class="subtotal"><span>Lunch total</span><span><span class="c">695 cal</span> · <span class="p">72 g</span></span></div>
+    <div class="addrow"><div class="a">+ Add food</div><div class="b">Quick add</div><div class="b">Repeat</div></div>
+  </div>
+
+  <nav class="tabbar">
+    <div class="tb on"><div class="i">◉</div>Today</div>
+    <div class="tb"><div class="i">☰</div>Foods</div>
+    <div class="tb"><div class="i">▤</div>Meals</div>
+    <div class="tb"><div class="i">⚙︎</div>Settings</div>
+  </nav>
+
+  <!-- Add food page -->
+  <div class="page">
+    <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+    <div class="nav"><span class="back">‹ Foods</span><span class="ttl">Log food</span><span class="sp"></span></div>
+    <div class="food-card"><div class="n">Chicken breast</div><div class="q">Serving 100 g · 165 cal · 31 g protein</div></div>
+    <div class="chips"><div class="chip">Servings</div><div class="chip on">Grams</div></div>
+    <div class="amt"><div class="num">220</div><div class="u">grams</div></div>
+    <div class="res"><div class="c"><b>363</b><span>CALORIES</span></div><div class="p"><b>68 g</b><span>PROTEIN</span></div></div>
+    <div class="mealsel"><div>Breakfast</div><div>Lunch</div><div class="on">Dinner</div><div>Late Night</div></div>
+    <div class="pad"><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>.</div><div>0</div><div>⌫</div></div>
+    <div class="save">Add to Dinner</div>
+  </div>
+
+<script>
+  // week strip with per-day progress rings (sample data)
+  const days = [['MON',12,.92],['TUE',13,1.08],['WED',14,.85],['THU',15,.71,true],['FRI',16,0],['SAT',17,0],['SUN',18,0]];
+  const C = 2 * Math.PI * 17;
+  document.getElementById('days').innerHTML = days.map(([dow, n, p, sel]) => {
+    const over = p > 1, col = over ? '#e0322b' : '#1a6cf0';
+    const len = Math.min(p, 1) * C;
+    return `<div class="d${sel ? ' sel' : ''}"><div class="dow">${dow}</div><div class="ring">
+      <svg viewBox="0 0 40 40"><circle class="bg" cx="20" cy="20" r="${sel ? 14 : 0}" fill="none"/>
+      <circle cx="20" cy="20" r="17" fill="none" stroke="#ececf0" stroke-width="3"/>
+      ${p ? `<circle cx="20" cy="20" r="17" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round"
+        stroke-dasharray="${len} ${C}" transform="rotate(-90 20 20)"/>` : ''}</svg>
+      <div class="n">${n}</div></div></div>`;
+  }).join('');
+  if (new URLSearchParams(location.search).has('sheet')) document.body.classList.add('sheet-open');
+</script>
+</body>
+</html>

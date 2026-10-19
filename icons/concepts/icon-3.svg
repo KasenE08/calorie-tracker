@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Icon 3: Plate — fork + knife beside a plate whose rim is split blue/orange -->
+  <rect width="512" height="512" fill="#ffffff"/>
+  <circle cx="256" cy="256" r="122" fill="none" stroke="#1a6cf0" stroke-width="30" stroke-linecap="round"
+          stroke-dasharray="460 767" transform="rotate(-90 256 256)"/>
+  <circle cx="256" cy="256" r="122" fill="none" stroke="#ff8a00" stroke-width="30" stroke-linecap="round"
+          stroke-dasharray="210 767" stroke-dashoffset="-510" transform="rotate(-90 256 256)"/>
+  <circle cx="256" cy="256" r="78" fill="#f3f5f9"/>
+  <g fill="#000">
+    <rect x="56" y="126" width="10" height="64" rx="5"/><rect x="76" y="126" width="10" height="64" rx="5"/><rect x="96" y="126" width="10" height="64" rx="5"/>
+    <path d="M56 180h50v16a25 25 0 0 1-17 24v172a8 8 0 0 1-16 0V220a25 25 0 0 1-17-24z"/>
+  </g>
+  <path d="M456 126c-26 18-34 62-34 106v18h18v142a8 8 0 0 0 16 0z" fill="#000"/>
+</svg>

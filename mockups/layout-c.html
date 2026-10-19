@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<title>Layout C — Minimal Ledger</title>
+<style>
+  :root {
+    --blue: #1a6cf0; --blue-soft: #e8f0fe;
+    --orange: #ff8a00; --orange-soft: #fff1e0;
+    --red: #e0322b; --ink: #000; --muted: #76767c; --line: #e9e9ee;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #fff; color: var(--ink); }
+  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+         width: 390px; min-height: 844px; position: relative; overflow-x: hidden; }
+  .status { height: 47px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 28px 6px; font-weight: 600; font-size: 15px; }
+
+  .month { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 22px 0; }
+  .month b { font-size: 15px; font-weight: 700; }
+  .month span { font-size: 13px; color: var(--muted); font-weight: 600; }
+
+  .week { display: grid; grid-template-columns: repeat(7, 1fr); padding: 10px 12px 0; border-bottom: 1px solid var(--line); }
+  .d { text-align: center; padding-bottom: 10px; position: relative; }
+  .d .dow { font-size: 11px; color: var(--muted); font-weight: 600; }
+  .d .num { font-size: 20px; font-weight: 600; margin-top: 3px; color: #b0b0b6; }
+  .d.logged .num { color: var(--ink); }
+  .d.sel .num { color: var(--blue); font-weight: 800; }
+  .d.sel::after { content: ""; position: absolute; left: 30%; right: 30%; bottom: -1px; height: 3px; background: var(--blue); border-radius: 2px; }
+  .d.today .dow { color: var(--blue); }
+
+  .hero { padding: 26px 22px 6px; }
+  .hero .k { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  .hero .big { font-size: 112px; font-weight: 800; letter-spacing: -5px; line-height: .95; color: var(--blue); font-variant-numeric: tabular-nums; margin-top: 4px; }
+  .hero .big.over { color: var(--red); }
+
+  .bars { padding: 10px 22px 0; display: grid; gap: 14px; }
+  .bar { display: grid; grid-template-columns: 1fr auto; row-gap: 6px; align-items: baseline; }
+  .bar .l { font-size: 14px; font-weight: 700; }
+  .bar.cal .l { color: var(--blue); } .bar.pro .l { color: var(--orange); }
+  .bar .r { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .bar .r small { color: var(--muted); font-weight: 500; }
+  .track { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  .bar.cal .fill { background: var(--blue); } .bar.pro .fill { background: var(--orange); }
+  .fill { height: 100%; border-radius: 3px; }
+
+  .meals { padding: 22px 22px 120px; }
+  .meal { padding: 14px 0 6px; border-top: 2px solid var(--ink); margin-top: 16px; }
+  .meal:first-child { margin-top: 0; }
+  .mh { display: flex; justify-content: space-between; align-items: center; }
+  .mh h2 { font-size: 20px; font-weight: 800; letter-spacing: -.3px; }
+  .mh .time { font-size: 12px; color: var(--muted); font-weight: 600; margin-left: 8px; }
+  .mh .plus { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--blue); color: var(--blue); display: grid; place-items: center; font-size: 20px; font-weight: 500; line-height: 1; }
+  .mtot { font-size: 13px; font-weight: 700; margin-top: 2px; }
+  .mtot .c { color: var(--blue); } .mtot .p { color: var(--orange); }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  td { padding: 9px 0; font-size: 15px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: 0; }
+  td.n { font-weight: 500; } td.n small { display: block; color: var(--muted); font-size: 12px; font-weight: 400; margin-top: 1px; }
+  td.c { text-align: right; color: var(--blue); font-weight: 600; width: 60px; }
+  td.p { text-align: right; color: var(--orange); font-weight: 600; width: 54px; }
+  .colh td { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 0 0 4px; }
+
+  .dock { position: fixed; left: 16px; right: 16px; bottom: 30px; display: grid; grid-template-columns: 1fr 52px; gap: 8px; }
+  .dock .add { background: var(--ink); color: #fff; border-radius: 16px; padding: 16px; text-align: center; font-size: 16px; font-weight: 700; }
+  .dock .gear { background: #f2f2f5; border-radius: 16px; display: grid; place-items: center; font-size: 22px; }
+
+  /* Add sheet (half height) */
+  .scrim { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.3); }
+  .sheet { display: none; position: fixed; left: 0; right: 0; bottom: 0; height: 600px; background: #fff; border-radius: 26px 26px 0 0; padding: 10px 22px 30px; }
+  body.sheet-open .scrim, body.sheet-open .sheet { display: block; }
+  body.sheet-open .dock { display: none; }
+  .grab { width: 38px; height: 5px; border-radius: 3px; background: #d4d4d8; margin: 0 auto 14px; }
+  .sh { display: flex; justify-content: space-between; align-items: baseline; }
+  .sh h3 { font-size: 24px; font-weight: 800; letter-spacing: -.4px; }
+  .sh span { font-size: 14px; color: var(--muted); font-weight: 600; }
+  .search { margin-top: 12px; border-bottom: 2px solid var(--ink); padding: 8px 0; font-size: 18px; font-weight: 600; }
+  .search .cursor { display: inline-block; width: 2px; height: 20px; background: var(--blue); vertical-align: -3px; margin-left: 1px; }
+  .results { margin-top: 6px; }
+  .res { display: flex; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .res.on { font-weight: 700; }
+  .res .m { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .qa { font-size: 14px; color: var(--blue); font-weight: 700; padding: 12px 0 2px; }
+  .stepper { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; }
+  .stepper .btn { width: 52px; height: 52px; border-radius: 50%; background: #f2f2f5; display: grid; place-items: center; font-size: 26px; font-weight: 500; }
+  .stepper .mid { text-align: center; }
+  .stepper .mid b { font-size: 44px; font-weight: 800; letter-spacing: -1.5px; }
+  .stepper .mid .u { display: flex; gap: 4px; justify-content: center; margin-top: 2px; }
+  .stepper .mid .u span { font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 12px; color: var(--muted); }
+  .stepper .mid .u span.on { background: var(--ink); color: #fff; }
+  .totals { display: flex; justify-content: center; gap: 22px; margin-top: 10px; font-size: 18px; font-weight: 800; }
+  .totals .c { color: var(--blue); } .totals .p { color: var(--orange); }
+  .go { margin-top: 14px; display: grid; grid-template-columns: 1fr; }
+  .go div { background: var(--blue); color: #fff; text-align: center; padding: 16px; border-radius: 16px; font-size: 17px; font-weight: 700; }
+  .go small { display: block; font-size: 12px; font-weight: 500; opacity: .85; margin-top: 2px; }
+</style>
+</head>
+<body>
+  <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+  <div class="month"><b>October 2026</b><span>Week of Oct 12</span></div>
+  <div class="week">
+    <div class="d logged"><div class="dow">M</div><div class="num">12</div></div>
+    <div class="d logged"><div class="dow">T</div><div class="num">13</div></div>
+    <div class="d logged"><div class="dow">W</div><div class="num">14</div></div>
+    <div class="d logged sel today"><div class="dow">T</div><div class="num">15</div></div>
+    <div class="d"><div class="dow">F</div><div class="num">16</div></div>
+    <div class="d"><div class="dow">S</div><div class="num">17</div></div>
+    <div class="d"><div class="dow">S</div><div class="num">18</div></div>
+  </div>
+
+  <section class="hero">
+    <div class="k">Calories left · Thu</div>
+    <div class="big">760</div>
+  </section>
+
+  <section class="bars">
+    <div class="bar cal"><span class="l">Calories</span><span class="r">1,840 <small>/ 2,600 cal</small></span><div class="track"><div class="fill" style="width:70.8%"></div></div></div>
+    <div class="bar pro"><span class="l">Protein</span><span class="r">142 <small>/ 180 g</small></span><div class="track"><div class="fill" style="width:78.9%"></div></div></div>
+  </section>
+
+  <section class="meals">
+    <div class="meal">
+      <div class="mh"><div><h2 style="display:inline">Breakfast</h2><span class="time">6–11 AM</span></div><div class="plus">+</div></div>
+      <div class="mtot"><span class="c">315 cal</span> · <span class="p">29 g</span></div>
+      <table>
+        <tr class="colh"><td></td><td style="text-align:right">cal</td><td style="text-align:right">prot</td></tr>
+        <tr><td class="n">Greek yogurt<small>1 serving</small></td><td class="c">150</td><td class="p">25</td></tr>
+        <tr><td class="n">Banana<small>118 g</small></td><td class="c">105</td><td class="p">1</td></tr>
+        <tr><td class="n">Coffee w/ milk<small>Quick add</small></td><td class="c">60</td><td class="p">3</td></tr>
+      </table>
+    </div>
+    <div class="meal">
+      <div class="mh"><div><h2 style="display:inline">Lunch</h2><span class="time">11 AM–4 PM</span></div><div class="plus">+</div></div>
+      <div class="mtot"><span class="c">695 cal</span> · <span class="p">72 g</span></div>
+      <table>
+        <tr><td class="n">Chicken breast<small>200 g</small></td><td class="c">330</td><td class="p">62</td></tr>
+        <tr><td class="n">White rice<small>1.5 servings</small></td><td class="c">310</td><td class="p">6</td></tr>
+        <tr><td class="n">Broccoli<small>150 g</small></td><td class="c">55</td><td class="p">4</td></tr>
+      </table>
+    </div>
+    <div class="meal">
+      <div class="mh"><div><h2 style="display:inline">Dinner</h2><span class="time">4 PM–12 AM</span></div><div class="plus">+</div></div>
+      <div class="mtot"><span class="c">710 cal</span> · <span class="p">41 g</span></div>
+      <table>
+        <tr><td class="n">Salmon fillet<small>150 g</small></td><td class="c">310</td><td class="p">33</td></tr>
+        <tr><td class="n">Sweet potato<small>1 serving</small></td><td class="c">180</td><td class="p">4</td></tr>
+        <tr><td class="n">Ice cream<small>Quick add</small></td><td class="c">220</td><td class="p">4</td></tr>
+      </table>
+    </div>
+    <div class="meal">
+      <div class="mh"><div><h2 style="display:inline">Late Night</h2><span class="time">12–6 AM</span></div><div class="plus">+</div></div>
+      <div class="mtot"><span class="c">120 cal</span> · <span class="p">0 g</span></div>
+      <table>
+        <tr><td class="n">Popcorn<small>1 serving</small></td><td class="c">120</td><td class="p">0</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <div class="dock"><div class="add">+ Log food</div><div class="gear">⚙︎</div></div>
+
+  <div class="scrim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sh"><h3>Log to Dinner</h3><span>auto · 6:42 PM</span></div>
+    <div class="search">chick<span class="cursor"></span></div>
+    <div class="results">
+      <div class="res on"><span>Chicken breast</span><span class="m">165 cal · 31 g / 100 g</span></div>
+      <div class="res"><span>Chicken thigh</span><span class="m">209 cal · 26 g / 100 g</span></div>
+      <div class="res"><span>Chickpeas</span><span class="m">269 cal · 15 g / 164 g</span></div>
+    </div>
+    <div class="qa">+ Quick add calories &amp; protein</div>
+    <div class="stepper">
+      <div class="btn">−</div>
+      <div class="mid"><b>220</b><div class="u"><span>servings</span><span class="on">grams</span></div></div>
+      <div class="btn">+</div>
+    </div>
+    <div class="totals"><span class="c">363 cal</span><span class="p">68 g protein</span></div>
+    <div class="go"><div>Add Chicken breast<small>Dinner · Thu Oct 15</small></div></div>
+  </div>
+<script>
+  if (new URLSearchParams(location.search).has('sheet')) document.body.classList.add('sheet-open');
+</script>
+</body>
+</html>

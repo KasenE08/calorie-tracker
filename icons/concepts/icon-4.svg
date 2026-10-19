@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Icon 4: Bars — the app's two progress bars, on white -->
+  <rect width="512" height="512" fill="#ffffff"/>
+  <rect x="86" y="150" width="340" height="76" rx="38" fill="#e8f0fe"/>
+  <rect x="86" y="150" width="250" height="76" rx="38" fill="#1a6cf0"/>
+  <rect x="86" y="286" width="340" height="76" rx="38" fill="#fff1e0"/>
+  <rect x="86" y="286" width="290" height="76" rx="38" fill="#ff8a00"/>
+</svg>

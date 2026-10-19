@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Icon 2: Flame — white flame with orange core on blue -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f7dff"/><stop offset="1" stop-color="#1557d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <path d="M256 66C282 150 384 200 384 312C384 392 326 448 256 448C186 448 128 392 128 312C128 252 162 214 194 184C194 234 214 262 240 272C224 200 234 128 256 66Z" fill="#ffffff"/>
+  <path d="M262 256C276 302 322 322 322 372C322 408 296 432 260 432C224 432 196 408 196 374C196 342 218 320 234 304C237 330 248 344 262 350C251 316 251 286 262 256Z" fill="#ff8a00"/>
+</svg>

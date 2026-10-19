@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<title>Layout A — Classic Stack</title>
+<style>
+  :root {
+    --blue: #1a6cf0; --blue-soft: #e8f0fe;
+    --orange: #ff8a00; --orange-soft: #fff1e0;
+    --red: #e0322b; --ink: #000; --muted: #6b6b70; --line: #ececf0; --card: #f6f6f8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #fff; color: var(--ink); }
+  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+         width: 390px; min-height: 844px; position: relative; overflow-x: hidden; }
+  .status { height: 47px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 28px 6px; font-weight: 600; font-size: 15px; }
+
+  header { display: flex; justify-content: space-between; align-items: center; padding: 6px 20px 10px; }
+  header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  .icon-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--card); display: grid; place-items: center; }
+
+  .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 0 14px 4px; }
+  .day { text-align: center; padding: 8px 0 10px; border-radius: 14px; }
+  .day .dow { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .day .num { font-size: 18px; font-weight: 700; margin-top: 4px; }
+  .day.sel { background: var(--blue); }
+  .day.sel .dow, .day.sel .num { color: #fff; }
+  .day .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--blue); margin: 4px auto 0; }
+  .day.sel .dot { background: #fff; }
+  .day.empty .dot { background: transparent; }
+  .weeklabel { text-align: center; font-size: 12px; color: var(--muted); padding: 2px 0 6px; }
+
+  .hero { text-align: center; padding: 14px 0 6px; }
+  .hero .big { font-size: 76px; font-weight: 800; letter-spacing: -2px; line-height: 1; color: var(--blue); font-variant-numeric: tabular-nums; }
+  .hero .big.over { color: var(--red); }
+  .hero .cap { font-size: 14px; color: var(--muted); margin-top: 6px; font-weight: 500; }
+
+  .bars { padding: 14px 20px 6px; display: grid; gap: 12px; }
+  .bar .row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .bar .row span:last-child { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .track { height: 12px; border-radius: 6px; overflow: hidden; }
+  .bar.cal .track { background: var(--blue-soft); } .bar.cal .fill { background: var(--blue); }
+  .bar.pro .track { background: var(--orange-soft); } .bar.pro .fill { background: var(--orange); }
+  .fill { height: 100%; border-radius: 6px; }
+
+  .meals { padding: 14px 16px 120px; display: grid; gap: 12px; }
+  .meal { background: var(--card); border-radius: 18px; padding: 14px 16px 8px; }
+  .meal .mh { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .meal .mh h2 { font-size: 17px; font-weight: 700; }
+  .meal .mh .sub { font-size: 13px; font-weight: 600; }
+  .meal .mh .sub .c { color: var(--blue); } .meal .mh .sub .p { color: var(--orange); }
+  .entry { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+  .entry:first-of-type { border-top: 0; }
+  .entry .n { font-size: 15px; font-weight: 500; }
+  .entry .q { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .entry .v { text-align: right; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .entry .v .c { color: var(--blue); display: block; } .entry .v .p { color: var(--orange); font-size: 12px; }
+  .meal .emptytxt { font-size: 13px; color: var(--muted); padding: 6px 0 10px; }
+
+  .fab { position: fixed; right: 22px; bottom: 34px; width: 62px; height: 62px; border-radius: 50%; background: var(--blue);
+         color: #fff; font-size: 34px; font-weight: 300; display: grid; place-items: center; box-shadow: 0 8px 20px rgba(26,108,240,.35); }
+
+  /* Add-food sheet */
+  .scrim { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); }
+  .sheet { display: none; position: fixed; left: 0; right: 0; bottom: 0; height: 720px; background: #fff; border-radius: 22px 22px 0 0;
+           padding: 8px 18px 30px; box-shadow: 0 -6px 30px rgba(0,0,0,.15); }
+  body.sheet-open .scrim, body.sheet-open .sheet { display: block; }
+  body.sheet-open .fab { display: none; }
+  .grab { width: 38px; height: 5px; border-radius: 3px; background: #d4d4d8; margin: 0 auto 12px; }
+  .sheet-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .sheet-h h3 { font-size: 20px; font-weight: 700; }
+  .sheet-h .x { color: var(--blue); font-size: 16px; font-weight: 600; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--card); border-radius: 10px; padding: 3px; margin-bottom: 12px; }
+  .seg div { text-align: center; padding: 8px 0; font-size: 14px; font-weight: 600; border-radius: 8px; color: var(--muted); }
+  .seg div.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .search { background: var(--card); border-radius: 12px; padding: 11px 14px; font-size: 15px; color: var(--muted); margin-bottom: 8px; }
+  .flist .f { display: flex; justify-content: space-between; align-items: center; padding: 11px 2px; border-bottom: 1px solid var(--line); }
+  .flist .f .n { font-size: 15px; font-weight: 500; } .flist .f .q { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .flist .f .v { font-size: 13px; text-align: right; font-weight: 600; }
+  .flist .f .v .c { color: var(--blue); } .flist .f .v .p { color: var(--orange); }
+  .flist .f.sel { background: var(--blue-soft); border-radius: 12px; border-bottom-color: transparent; padding: 11px 10px; margin: 0 -8px; }
+  .amount { margin-top: 14px; border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+  .amount .top { display: flex; gap: 10px; align-items: center; }
+  .amount input { flex: 1; font-size: 26px; font-weight: 700; border: 0; background: var(--card); border-radius: 10px; padding: 8px 12px; width: 100%; color: var(--ink); }
+  .amount .unit { display: grid; grid-template-columns: 1fr 1fr; background: var(--card); border-radius: 10px; padding: 3px; width: 170px; }
+  .amount .unit div { text-align: center; padding: 9px 0; font-size: 14px; font-weight: 600; border-radius: 8px; color: var(--muted); }
+  .amount .unit div.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .amount .preview { display: flex; justify-content: space-between; margin-top: 12px; font-size: 15px; font-weight: 700; }
+  .amount .preview .c { color: var(--blue); } .amount .preview .p { color: var(--orange); }
+  .amount .meal-pick { margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .amount .meal-pick b { color: var(--ink); }
+  .cta { margin-top: 14px; background: var(--blue); color: #fff; text-align: center; padding: 15px; border-radius: 14px; font-size: 17px; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+  <header>
+    <h1>Today</h1>
+    <div class="icon-btn" aria-label="Settings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </div>
+  </header>
+
+  <div class="weeklabel">Oct 12 – 18 · swipe for other weeks</div>
+  <div class="week">
+    <div class="day"><div class="dow">Mon</div><div class="num">12</div><div class="dot"></div></div>
+    <div class="day"><div class="dow">Tue</div><div class="num">13</div><div class="dot"></div></div>
+    <div class="day"><div class="dow">Wed</div><div class="num">14</div><div class="dot"></div></div>
+    <div class="day sel"><div class="dow">Thu</div><div class="num">15</div><div class="dot"></div></div>
+    <div class="day empty"><div class="dow">Fri</div><div class="num">16</div><div class="dot"></div></div>
+    <div class="day empty"><div class="dow">Sat</div><div class="num">17</div><div class="dot"></div></div>
+    <div class="day empty"><div class="dow">Sun</div><div class="num">18</div><div class="dot"></div></div>
+  </div>
+
+  <section class="hero">
+    <div class="big">760</div>
+    <div class="cap">calories remaining</div>
+  </section>
+
+  <section class="bars">
+    <div class="bar cal">
+      <div class="row"><span>Calories</span><span>1,840 / 2,600 cal</span></div>
+      <div class="track"><div class="fill" style="width:70.8%"></div></div>
+    </div>
+    <div class="bar pro">
+      <div class="row"><span>Protein</span><span>142 / 180 g</span></div>
+      <div class="track"><div class="fill" style="width:78.9%"></div></div>
+    </div>
+  </section>
+
+  <section class="meals">
+    <div class="meal">
+      <div class="mh"><h2>Breakfast</h2><div class="sub"><span class="c">315 cal</span> · <span class="p">29 g</span></div></div>
+      <div class="entry"><div><div class="n">Greek yogurt</div><div class="q">1 serving · 170 g</div></div><div class="v"><span class="c">150</span><span class="p">25 g</span></div></div>
+      <div class="entry"><div><div class="n">Banana</div><div class="q">1 serving · 118 g</div></div><div class="v"><span class="c">105</span><span class="p">1 g</span></div></div>
+      <div class="entry"><div><div class="n">Coffee w/ milk</div><div class="q">Quick add</div></div><div class="v"><span class="c">60</span><span class="p">3 g</span></div></div>
+    </div>
+    <div class="meal">
+      <div class="mh"><h2>Lunch</h2><div class="sub"><span class="c">695 cal</span> · <span class="p">72 g</span></div></div>
+      <div class="entry"><div><div class="n">Chicken breast</div><div class="q">200 g</div></div><div class="v"><span class="c">330</span><span class="p">62 g</span></div></div>
+      <div class="entry"><div><div class="n">White rice</div><div class="q">1.5 servings · 279 g</div></div><div class="v"><span class="c">310</span><span class="p">6 g</span></div></div>
+      <div class="entry"><div><div class="n">Broccoli</div><div class="q">150 g</div></div><div class="v"><span class="c">55</span><span class="p">4 g</span></div></div>
+    </div>
+    <div class="meal">
+      <div class="mh"><h2>Dinner</h2><div class="sub"><span class="c">710 cal</span> · <span class="p">41 g</span></div></div>
+      <div class="entry"><div><div class="n">Salmon fillet</div><div class="q">150 g</div></div><div class="v"><span class="c">310</span><span class="p">33 g</span></div></div>
+      <div class="entry"><div><div class="n">Sweet potato</div><div class="q">1 serving · 200 g</div></div><div class="v"><span class="c">180</span><span class="p">4 g</span></div></div>
+      <div class="entry"><div><div class="n">Ice cream</div><div class="q">Quick add</div></div><div class="v"><span class="c">220</span><span class="p">4 g</span></div></div>
+    </div>
+    <div class="meal">
+      <div class="mh"><h2>Late Night</h2><div class="sub"><span class="c">120 cal</span> · <span class="p">0 g</span></div></div>
+      <div class="entry"><div><div class="n">Popcorn</div><div class="q">1 serving · 28 g</div></div><div class="v"><span class="c">120</span><span class="p">0 g</span></div></div>
+    </div>
+  </section>
+
+  <div class="fab">+</div>
+
+  <div class="scrim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sheet-h"><h3>Add food</h3><span class="x">Cancel</span></div>
+    <div class="seg"><div class="on">Saved foods</div><div>Quick add</div></div>
+    <div class="search">🔍  Search saved foods</div>
+    <div class="flist">
+      <div class="f sel"><div><div class="n">Chicken breast</div><div class="q">per 100 g</div></div><div class="v"><span class="c">165 cal</span> · <span class="p">31 g</span></div></div>
+      <div class="f"><div><div class="n">Greek yogurt</div><div class="q">per 170 g</div></div><div class="v"><span class="c">150 cal</span> · <span class="p">25 g</span></div></div>
+      <div class="f"><div><div class="n">Eggs (large)</div><div class="q">per 50 g</div></div><div class="v"><span class="c">72 cal</span> · <span class="p">6 g</span></div></div>
+      <div class="f"><div><div class="n">White rice, cooked</div><div class="q">per 186 g</div></div><div class="v"><span class="c">206 cal</span> · <span class="p">4 g</span></div></div>
+      <div class="f"><div><div class="n">Whey protein</div><div class="q">per 31 g</div></div><div class="v"><span class="c">120 cal</span> · <span class="p">24 g</span></div></div>
+    </div>
+    <div class="amount">
+      <div class="top">
+        <input value="220" readonly>
+        <div class="unit"><div>Servings</div><div class="on">Grams</div></div>
+      </div>
+      <div class="preview"><span class="c">363 cal</span><span class="p">68 g protein</span></div>
+      <div class="meal-pick">Adding to <b>Dinner ▾</b> (auto from 6:42 PM)</div>
+    </div>
+    <div class="cta">Add to Dinner</div>
+  </div>
+<script>
+  if (new URLSearchParams(location.search).has('sheet')) document.body.classList.add('sheet-open');
+</script>
+</body>
+</html>
