@@ -106,3 +106,11 @@ FIRST ACTION: save this entire file as SPEC.md in the repo root. Re-read it at t
 
 ## Decisions Log
 (Claude Code: append my answers here after each phase.)
+
+### After Phase 0 (2026-10-19)
+- **Layout:** B (dashboard + meal tabs + bottom tab bar; full-page add-food with number pad).
+- **Icon:** 3 (Plate: fork + knife, plate rim split blue/orange).
+- **Meal times CHANGED:** Late Night is now **9:01 PM – 4:00 AM** ("anything past 9 PM" through 4 AM) and still counts toward the PREVIOUS day. So Dinner ends at 9:00 PM. *(Pending: what 4:01–5:59 AM counts as, and when the app day flips — see open question.)*
+- **Time precision:** go by the minute, ignore seconds (e.g. 11:00:45 = 11:00).
+- **Protein:** whole grams everywhere (round to nearest gram). Calories are whole numbers too.
+- **Git:** Claude pushes to `main` automatically at the end of each phase (and whenever useful), no need to ask. Git permissions are pre-approved in `.claude/settings.json`.
