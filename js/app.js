@@ -1,5 +1,6 @@
 import * as L from './logic.js';
 import * as S from './store.js';
+import { VERSION } from './version.js';
 
 const $app = document.getElementById('app');
 const $toast = document.getElementById('toast');
@@ -45,7 +46,7 @@ function selectDate(date) {
 }
 
 // ---------- Render ----------
-const PAGES = { pick: renderPick, log: renderLog, quick: renderQuick, 'food-form': renderFoodForm, 'meal-form': renderMealForm, repeat: renderRepeat };
+const PAGES = { pick: renderPick, log: renderLog, quick: renderQuick, 'food-form': renderFoodForm, 'meal-form': renderMealForm, repeat: renderRepeat, 'import-confirm': renderImportConfirm };
 const TABS = { today: renderToday, foods: renderFoods, meals: renderMeals, settings: renderSettings };
 
 function render() {
@@ -265,8 +266,69 @@ function renderSettings() {
     <div class="actions"><button class="btn primary big" data-act="save-goals">Save goals</button></div>
     <p class="note">The same goals apply to every day.</p>
     <div class="section-h">Backup</div>
-    <p class="note left">Export / Import is coming in Phase 4.</p>
+    <p class="note left" style="margin-bottom:10px">Your data lives only on this phone. Export a backup now and then — deleting the app or clearing website data erases everything.</p>
+    <div class="backup">
+      <button class="btn primary" data-act="export">Export backup</button>
+      <button class="btn" data-act="import">Import backup</button>
+    </div>
+    <input type="file" id="import-file" accept="application/json,.json" hidden>
+    <div class="err" id="import-err" style="margin:8px 20px 0"></div>
+    <p class="version">Calorie Tracker · version ${VERSION}</p>
   </main>`;
+}
+
+const longDate = iso => L.fromISODate(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+function renderImportConfirm(p) {
+  const s = p.summary;
+  const when = s.exportedAt ? new Date(s.exportedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : null;
+  const cur = S.getState();
+  return `<main class="screen page">
+    ${nav('Import backup', 'Settings')}
+    <div class="confirm-box">
+      <h2>Replace everything?</h2>
+      <p>${when ? `Backup from <b>${when}</b>:` : 'This backup has:'}</p>
+      <ul class="num">
+        <li>${plural(s.entries, 'logged entry').replace('entrys', 'entries')}${s.days ? ` over ${plural(s.days, 'day')} (${longDate(s.first)} – ${longDate(s.last)})` : ''}</li>
+        <li>${plural(s.foods, 'saved food')}</li>
+        <li>${plural(s.savedMeals, 'saved meal')}</li>
+      </ul>
+      <p class="warn">This replaces all data on this phone (now ${plural(cur.entries.length, 'entry').replace('entrys', 'entries')}, ${plural(cur.foods.length, 'food')}). It can’t be undone.</p>
+    </div>
+    <div class="actions">
+      <button class="btn danger-fill big" data-act="import-confirm">Replace my data</button>
+      <button class="btn big" data-act="back">Cancel</button>
+    </div>
+  </main>`;
+}
+
+async function exportBackup() {
+  const json = JSON.stringify(S.exportData(), null, 2);
+  const name = `calorie-tracker-backup-${today()}.json`;
+  const file = new File([json], name, { type: 'application/json' });
+  // iPhone: the share sheet offers "Save to Files". Elsewhere: a normal download.
+  if (navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: name }); toast('Backup exported'); } catch { /* cancelled */ }
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(file);
+  a.download = name;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  toast('Backup exported');
+}
+
+async function readImportFile(file) {
+  const err = document.getElementById('import-err');
+  let obj;
+  try { obj = JSON.parse(await file.text()); } catch { err.textContent = 'That file couldn’t be read as a backup.'; return; }
+  const r = L.validateBackup(obj);
+  if (!r.ok) { err.textContent = r.error; return; }
+  err.textContent = '';
+  push({ view: 'import-confirm', data: r.data, summary: r.summary });
 }
 
 function nav(title, back = 'Back') {
@@ -586,6 +648,20 @@ $app.addEventListener('click', ev => {
       break;
     }
 
+    // Backup
+    case 'export': exportBackup(); break;
+    case 'import': {
+      const input = document.getElementById('import-file');
+      input.value = '';
+      input.click();
+      break;
+    }
+    case 'import-confirm':
+      S.replaceAll(p.data);
+      ui.tab = 'today'; selectDate(today()); popAll();
+      toast('Backup restored');
+      break;
+
     // Saved meals
     case 'new-meal': push({ view: 'meal-form', draft: { name: '', category: L.mealForTime(now()), items: [] } }); break;
     case 'save-as-meal': {
@@ -643,6 +719,10 @@ $app.addEventListener('input', ev => {
   if (ev.target.id === 'm-name') p.draft.name = ev.target.value;
 });
 
+$app.addEventListener('change', ev => {
+  if (ev.target.id === 'import-file' && ev.target.files[0]) readImportFile(ev.target.files[0]);
+});
+
 // ---------- Week navigation: arrows or swipe ----------
 function changeWeek(dir) {
   selectDate(L.addDays(ui.date, 7 * dir)); // same weekday in the next/previous week
@@ -675,4 +755,33 @@ document.addEventListener('visibilitychange', () => {
   shownToday = t;
 });
 
+// ---------- Offline + update banner ----------
+// A new version installs in the background; the banner asks before switching.
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  let reg;
+  try { reg = await navigator.serviceWorker.register('sw.js'); } catch { return; }
+  const banner = document.getElementById('update');
+  let updating = false;
+  const showIfWaiting = () => {
+    if (reg.waiting && navigator.serviceWorker.controller) banner.hidden = false;
+  };
+  showIfWaiting();
+  reg.addEventListener('updatefound', () => {
+    const w = reg.installing;
+    w?.addEventListener('statechange', () => { if (w.state === 'installed') showIfWaiting(); });
+  });
+  document.getElementById('update-btn').addEventListener('click', () => {
+    if (!reg.waiting) return location.reload();
+    updating = true;
+    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+  });
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (updating) location.reload(); });
+  // Home-screen apps resume without reloading, so check when the app comes back and every 30 min.
+  const check = () => reg.update().catch(() => {});
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+  setInterval(check, 30 * 60 * 1000);
+}
+
 render();
+registerServiceWorker();

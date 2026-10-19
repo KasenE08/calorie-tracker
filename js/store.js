@@ -142,3 +142,14 @@ export function mealItemsForAdding(meal) {
     return { ...it, name: food.name, snapshot: { servingGrams: food.servingGrams, cal: food.cal, protein: food.protein } };
   });
 }
+
+// ---------- Backup ----------
+export function exportData() {
+  return { app: 'calorie-tracker', exportedAt: new Date().toISOString(), ...structuredClone(state) };
+}
+
+// `data` must already be validated (logic.validateBackup). Replaces everything.
+export function replaceAll(data) {
+  state = { ...empty(), ...structuredClone(data) };
+  save();
+}

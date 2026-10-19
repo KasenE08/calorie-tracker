@@ -7,12 +7,13 @@ const root = resolve(import.meta.dirname, '..');
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css',
   '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
 
-export function serve(port = 0) {
+// `overrides` maps a URL path (e.g. '/sw.js') to replacement text, used by tests to fake a new deploy.
+export function serve(port = 0, overrides = {}) {
   const server = createServer(async (req, res) => {
     let path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname));
     if (path.endsWith('/')) path += 'index.html';
     try {
-      const body = await readFile(join(root, path));
+      const body = overrides[path] ?? await readFile(join(root, path));
       res.writeHead(200, { 'Content-Type': types[extname(path)] || 'application/octet-stream' });
       res.end(body);
     } catch {

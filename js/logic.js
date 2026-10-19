@@ -106,3 +106,42 @@ export function entryFieldsFromItem(item) {
   }
   return { kind: 'quick', name: item.name, cal: item.cal, protein: item.protein };
 }
+
+// ---------- Backup ----------
+const isNum = n => typeof n === 'number' && Number.isFinite(n);
+const isDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+
+// Checks an imported backup before anything is overwritten.
+// Returns { ok: true, data, summary } or { ok: false, error }.
+export function validateBackup(obj) {
+  const bad = error => ({ ok: false, error });
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return bad('This file isn’t a Calorie Tracker backup.');
+  if (obj.app !== 'calorie-tracker') return bad('This file isn’t a Calorie Tracker backup.');
+  const { foods, entries } = obj;
+  const savedMeals = obj.savedMeals ?? [];
+  if (!Array.isArray(foods) || !Array.isArray(entries) || !Array.isArray(savedMeals)) return bad('The backup is missing data.');
+  if (!foods.every(f => f && typeof f.name === 'string' && isNum(f.servingGrams) && f.servingGrams > 0 && isNum(f.cal) && isNum(f.protein))) {
+    return bad('A saved food in the backup is damaged.');
+  }
+  if (!entries.every(e => e && isDate(e.date) && MEALS.includes(e.meal) && isNum(e.cal) && isNum(e.protein) && typeof e.name === 'string')) {
+    return bad('A logged entry in the backup is damaged.');
+  }
+  if (!savedMeals.every(m => m && typeof m.name === 'string' && MEALS.includes(m.category) && Array.isArray(m.items))) {
+    return bad('A saved meal in the backup is damaged.');
+  }
+  const s = obj.settings || {};
+  const settings = {
+    calGoal: isNum(s.calGoal) && s.calGoal > 0 ? s.calGoal : null,
+    proteinGoal: isNum(s.proteinGoal) && s.proteinGoal > 0 ? s.proteinGoal : null,
+  };
+  const dates = entries.map(e => e.date).sort();
+  return {
+    ok: true,
+    data: { version: 1, settings, foods, entries, savedMeals },
+    summary: {
+      foods: foods.length, entries: entries.length, savedMeals: savedMeals.length,
+      days: new Set(dates).size, first: dates[0] || null, last: dates[dates.length - 1] || null,
+      exportedAt: typeof obj.exportedAt === 'string' ? obj.exportedAt : null,
+    },
+  };
+}

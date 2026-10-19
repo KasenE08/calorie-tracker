@@ -115,3 +115,35 @@ test('entryFieldsFromItem copies values (not references) and rescales', async ()
   assert.equal(item.snapshot.cal, 165);
   assert.deepEqual(entryFieldsFromItem({ kind: 'quick', name: 'Coffee', cal: 60, protein: 3 }), { kind: 'quick', name: 'Coffee', cal: 60, protein: 3 });
 });
+
+test('validateBackup accepts a real backup and summarizes it', async () => {
+  const { validateBackup } = await import('../js/logic.js');
+  const backup = {
+    app: 'calorie-tracker', exportedAt: '2026-10-15T20:00:00.000Z', version: 1,
+    settings: { calGoal: 2400, proteinGoal: 170 },
+    foods: [{ id: 'a', name: 'Rice', servingGrams: 186, cal: 206, protein: 4 }],
+    entries: [
+      { id: '1', kind: 'quick', name: 'X', date: '2026-10-14', meal: 'lunch', cal: 100, protein: 5 },
+      { id: '2', kind: 'quick', name: 'Y', date: '2026-10-12', meal: 'late', cal: 50, protein: 0 },
+      { id: '3', kind: 'quick', name: 'Z', date: '2026-10-14', meal: 'dinner', cal: 50, protein: 0 },
+    ],
+    savedMeals: [{ id: 'm', name: 'M', category: 'breakfast', items: [] }],
+  };
+  const r = validateBackup(backup);
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.summary, { foods: 1, entries: 3, savedMeals: 1, days: 2, first: '2026-10-12', last: '2026-10-14', exportedAt: '2026-10-15T20:00:00.000Z' });
+  assert.deepEqual(r.data.settings, { calGoal: 2400, proteinGoal: 170 });
+});
+
+test('validateBackup rejects other files and damaged data', async () => {
+  const { validateBackup } = await import('../js/logic.js');
+  assert.equal(validateBackup(null).ok, false);
+  assert.equal(validateBackup([]).ok, false);
+  assert.equal(validateBackup({ foods: [], entries: [] }).ok, false); // not ours
+  const base = { app: 'calorie-tracker', foods: [], entries: [], savedMeals: [] };
+  assert.equal(validateBackup(base).ok, true);
+  assert.equal(validateBackup({ ...base, entries: [{ date: '10/14/2026', meal: 'lunch', cal: 1, protein: 1, name: 'x' }] }).ok, false);
+  assert.equal(validateBackup({ ...base, entries: [{ date: '2026-10-14', meal: 'brunch', cal: 1, protein: 1, name: 'x' }] }).ok, false);
+  assert.equal(validateBackup({ ...base, foods: [{ name: 'x', servingGrams: 0, cal: 1, protein: 1 }] }).ok, false);
+  assert.deepEqual(validateBackup({ ...base, settings: { calGoal: -5 } }).data.settings, { calGoal: null, proteinGoal: null });
+});

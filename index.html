@@ -6,14 +6,23 @@
 <meta name="color-scheme" content="light only">
 <meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Calories">
+<meta name="apple-mobile-web-app-title" content="Calorie Tracker">
+<meta name="application-name" content="Calorie Tracker">
 <title>Calorie Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+<div id="update" class="update" hidden role="status">
+  <span>A new version is available.</span><button id="update-btn">Update</button>
+</div>
 <div id="app"></div>
 <div id="toast" class="toast" hidden></div>
+<div class="rotate" aria-hidden="true"><div>Turn your phone upright<br><small>Calorie Tracker works in portrait</small></div></div>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>
